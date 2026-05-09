@@ -16,6 +16,7 @@ class FaceService {
   public async loadModels() {
     if (this.isModelsLoaded) return;
     
+    // Use relative path for GitHub Pages compatibility
     const MODEL_URL = './models';
     await Promise.all([
       faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),

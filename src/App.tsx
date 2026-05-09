@@ -42,10 +42,18 @@ export default function App() {
   // Continuous detection
   useEffect(() => {
     let animationFrame: number
+    let isDetecting = false
+    
     const detect = async () => {
-      if (videoRef.current && isModelsLoaded) {
-        const face = await FaceService.detectFace(videoRef.current)
-        setCurrentFace(face)
+      if (videoRef.current && isModelsLoaded && !isDetecting && videoRef.current.readyState === 4) {
+        isDetecting = true
+        try {
+          const face = await FaceService.detectFace(videoRef.current)
+          setCurrentFace(face)
+        } catch (err) {
+          console.error("Detection error:", err)
+        }
+        isDetecting = false
       }
       animationFrame = requestAnimationFrame(detect)
     }
@@ -70,25 +78,28 @@ export default function App() {
   }
 
   const calibrateOwner = () => {
+    console.log("Calibrating...", currentFace)
     if (currentFace) {
       const descriptor = Array.from(currentFace.descriptor)
       localStorage.setItem('owner_descriptor', JSON.stringify(descriptor))
       setOwnerDescriptor(currentFace.descriptor)
-      setIsCalibrating(false)
       alert('BIOMETRIC SIGNATURE STORED')
+      setShowCalibration(false)
+    } else {
+      console.warn("No face detected during calibration")
     }
   }
 
   const handleHeaderClick = () => {
     const now = Date.now()
     if (now - lastTapRef.current < 300) {
-      setShowCalibration(!showCalibration)
+      setShowCalibration(prev => !prev)
     }
     lastTapRef.current = now
   }
 
   return (
-    <div className="min-h-screen bg-black text-white font-mono flex flex-col items-center justify-between p-6 overflow-hidden relative select-none touch-none">
+    <div className="min-h-screen bg-black text-white font-mono flex flex-col items-center justify-between p-6 overflow-hidden relative select-none">
       {/* Background Grid */}
       <div className="absolute inset-0 opacity-10 pointer-events-none" 
            style={{ backgroundImage: 'linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
